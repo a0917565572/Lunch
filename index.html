@@ -59,9 +59,11 @@
     <div class="bg-slate-50 border-t border-slate-200/80 px-4 py-2">
       <div class="max-w-6xl mx-auto flex items-center justify-between gap-3 overflow-x-auto">
         <div class="flex items-center gap-2 shrink-0">
-          <span class="text-xs font-bold text-slate-500 flex items-center gap-1">
-            <i class="fa-solid fa-calendar-week text-amber-500"></i> 本週開團梯次：
-          </span>
+          <div class="flex items-center bg-white border border-slate-200 rounded-lg shadow-xs shrink-0">
+            <button id="prevWeekBtn" type="button" class="px-2.5 py-1.5 text-slate-500 hover:text-amber-600" title="上一週"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+            <span id="weekLabel" class="text-xs font-bold text-slate-700 px-1 whitespace-nowrap">--</span>
+            <button id="nextWeekBtn" type="button" class="px-2.5 py-1.5 text-slate-500 hover:text-amber-600" title="下一週"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+          </div>
           <div id="groupTabsContainer" class="flex items-center gap-1.5">
             <!-- 動態注入梯次頁籤 (含刪除按鈕) -->
           </div>
@@ -74,6 +76,9 @@
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- ===================== 單日點餐畫面 ===================== -->
+    <div id="dayView" class="space-y-6">
 
     <!-- 團主後台管理區塊 (受密碼保護) -->
     <section id="adminPanel" class="hidden bg-white rounded-2xl p-5 border-2 border-amber-400 shadow-md transition-all duration-300">
@@ -410,6 +415,7 @@
                   <th class="py-2.5 px-3 text-center">份數</th>
                   <th class="py-2.5 px-3 text-right">小計</th>
                   <th class="py-2.5 px-3">備註</th>
+                  <th class="py-2.5 px-3 text-center">付款</th>
                   <th class="py-2.5 px-3 text-center">操作</th>
                 </tr>
               </thead>
@@ -421,7 +427,7 @@
                   <td colspan="6" class="py-3 px-3 text-slate-700">合計</td>
                   <td id="footTotalQty" class="py-3 px-3 text-center text-indigo-600 font-black">0</td>
                   <td id="footTotalAmount" class="py-3 px-3 text-right text-amber-600 font-black text-base">$0</td>
-                  <td colspan="2"></td>
+                  <td colspan="3"></td>
                 </tr>
               </tfoot>
             </table>
@@ -432,7 +438,163 @@
       </div>
 
     </div>
+
+    </div>
+    <!-- ===================== /單日點餐畫面 ===================== -->
+
+    <!-- ===================== 本週總覽畫面 ===================== -->
+    <section id="overviewView" class="hidden space-y-6">
+
+      <!-- 團主：本週管理（收款設定、對帳、複製下週） -->
+      <div id="adminWeekPanel" class="hidden bg-white rounded-2xl p-5 border-2 border-amber-400 shadow-md space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2 font-bold text-slate-800">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <i class="fa-solid fa-sliders text-amber-500"></i>
+            <span>團主本週管理（<span id="adminWeekLabel" class="text-amber-600 font-black"></span>）</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="shareWeekBtn" class="text-xs bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+              <i class="fa-solid fa-share-nodes"></i> 分享本週訂餐連結
+            </button>
+            <button id="copyWeekBtn" class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+              <i class="fa-solid fa-copy"></i> 複製本週菜單到下週
+            </button>
+            <button id="copyUnpaidBtn" class="text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+              <i class="fa-brands fa-line"></i> 複製未付款名單
+            </button>
+            <button id="lockAdminBtn2" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1.5 rounded-lg font-medium transition">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> 登出鎖定
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <!-- 收款設定 -->
+          <div class="space-y-2.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-building-columns text-indigo-500"></i> 收款設定（所有人都會看到）</div>
+            <div class="grid grid-cols-3 gap-2">
+              <input id="setBankCode" type="text" inputmode="numeric" placeholder="銀行代碼" class="col-span-1 text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
+              <input id="setBankName" type="text" placeholder="銀行名稱" class="col-span-2 text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
+            </div>
+            <input id="setBankAccount" type="text" inputmode="numeric" placeholder="收款帳號" class="w-full text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-mono">
+            <input id="setAccountName" type="text" placeholder="戶名" class="w-full text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
+            <textarea id="setPayNote" rows="2" placeholder="付款說明，例如：轉帳後請回報後五碼；現金請交給部門代表或團主" class="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white"></textarea>
+            <button id="saveSettingsBtn" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold">儲存收款設定</button>
+          </div>
+
+          <!-- 本週收款對帳 -->
+          <div class="lg:col-span-2 space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-scale-balanced text-amber-500"></i> 本週收款對帳</div>
+              <label class="text-xs text-slate-500 flex items-center gap-1.5 cursor-pointer">
+                <input id="reconOnlyOpen" type="checkbox" checked class="accent-amber-500"> 只顯示還沒結清的人
+              </label>
+            </div>
+            <div id="reconSummary" class="grid grid-cols-3 gap-2 text-center"></div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+              <table class="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr class="text-xs font-bold text-slate-500 bg-slate-50 border-b border-slate-200">
+                    <th class="py-2 px-3">部門 / 訂餐人</th>
+                    <th class="py-2 px-3 text-right">本週</th>
+                    <th class="py-2 px-3 text-right">已付</th>
+                    <th class="py-2 px-3 text-right">待確認</th>
+                    <th class="py-2 px-3 text-right">未付</th>
+                    <th class="py-2 px-3 text-center">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="reconTableBody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+            <p class="text-[11px] text-slate-400">💡 「待確認」是對方按了「我已付款」的金額，核對入帳後按「確認收款」。收到現金可直接按「收到現金」。單筆要改回未付，到各天的明細表點付款狀態即可。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 本週菜單一覽 -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <h2 class="font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-week text-amber-500"></i>
+            <span>本週菜單一覽</span>
+            <span id="weekCardsBadge" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium"></span>
+          </h2>
+          <span class="text-xs text-slate-400">點卡片進入當天點餐</span>
+        </div>
+        <div id="weekCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3"></div>
+      </div>
+
+      <!-- 我的本週訂單 + 收款資訊 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div class="lg:col-span-8 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <h2 class="font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-receipt text-amber-500"></i>
+              <span>我的本週訂單</span>
+            </h2>
+            <div class="flex items-center gap-2">
+              <button id="selectAllUnpaidBtn" type="button" class="text-xs border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg font-medium">全選未付</button>
+              <button id="openPayModalBtn" type="button" class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-hand-holding-dollar"></i> 我已付款（勾選的）
+              </button>
+            </div>
+          </div>
+          <div id="mySummary" class="grid grid-cols-3 gap-2 text-center"></div>
+          <div id="myOrdersContainer" class="space-y-3"></div>
+          <div id="myOtherWeeks" class="hidden text-xs bg-rose-50 border border-rose-200 text-rose-800 rounded-xl px-3.5 py-2.5"></div>
+        </div>
+
+        <div class="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+          <h2 class="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <i class="fa-solid fa-building-columns text-indigo-500"></i>
+            <span>付款方式</span>
+          </h2>
+          <div id="payInfoBox" class="space-y-3 text-sm"></div>
+        </div>
+      </div>
+    </section>
+    <!-- ===================== /本週總覽畫面 ===================== -->
+
   </main>
+
+  <!-- 回報付款 Modal -->
+  <div id="payModal" class="fixed inset-0 z-50 bg-black/70 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-xl mb-2">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
+        </div>
+        <h3 class="font-bold text-lg text-slate-900">回報付款</h3>
+        <p class="text-xs text-slate-500">付完款後在這裡回報，團主核對後會標記為「已付款」</p>
+      </div>
+      <div id="payModalItems" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm space-y-1"></div>
+      <div class="grid grid-cols-2 gap-2">
+        <label class="pay-method-opt cursor-pointer border-2 rounded-xl p-3 text-center text-sm font-bold" data-method="轉帳">
+          <input type="radio" name="payMethod" value="轉帳" class="hidden" checked>
+          <i class="fa-solid fa-building-columns block text-lg mb-1"></i> 銀行轉帳
+        </label>
+        <label class="pay-method-opt cursor-pointer border-2 rounded-xl p-3 text-center text-sm font-bold" data-method="現金">
+          <input type="radio" name="payMethod" value="現金" class="hidden">
+          <i class="fa-solid fa-money-bill-wave block text-lg mb-1"></i> 現金
+        </label>
+      </div>
+      <div id="payTransferFields" class="space-y-2">
+        <div id="payModalBank" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg p-2.5"></div>
+        <label class="block text-xs font-bold text-slate-700">轉出帳號後五碼 <span class="text-rose-500">*</span></label>
+        <input id="payLast5" type="text" inputmode="numeric" maxlength="5" placeholder="例如 12345" class="w-full text-center tracking-[0.4em] font-mono text-lg border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+      </div>
+      <div id="payCashFields" class="hidden space-y-2">
+        <label class="block text-xs font-bold text-slate-700">交給誰？（選填）</label>
+        <input id="payCashNote" type="text" maxlength="50" placeholder="例如：已交給業務部小明" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+      </div>
+      <div id="payModalError" class="hidden text-xs text-rose-600 text-center font-medium"></div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" id="payCancelBtn" class="flex-1 py-2.5 text-sm font-bold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">取消</button>
+        <button type="button" id="paySubmitBtn" class="flex-1 py-2.5 text-sm font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-sm">送出回報</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 團主密碼驗證 Modal -->
   <div id="passwordModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs hidden flex items-center justify-center p-4">
@@ -486,27 +648,34 @@
   <!-- JavaScript 邏輯 -->
   <script>
     // =====================================================================
-    //  設定區：照教學完成後，把這兩個值填進來
+    //  設定區
     // =====================================================================
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwmjqmgHJ7EMQdgegNenPxf9hJ1cbxfPvDWiEh2iQipMqrJVeZ91PqGo2Q08VZVzDXS/exec';   // Apps Script「網頁應用程式」網址（https://script.google.com/macros/s/.../exec）
-    const LIFF_ID = '2012308174-HTXnnlh8';   // LINE LIFF ID（例如 2001234567-AbCdEfGh）；留空 = 不使用 LINE 登入（測試用）
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwmjqmgHJ7EMQdgegNenPxf9hJ1cbxfPvDWiEh2iQipMqrJVeZ91PqGo2Q08VZVzDXS/exec';
+    const LIFF_ID = '2012308174-HTXnnlh8';
     // =====================================================================
 
-    const POLL_MS = 15000;          // 每 15 秒自動同步其他人的訂單
+    const POLL_MS = 15000;          // 每 15 秒自動同步
+    const OVERVIEW = '__overview__';
     const FALLBACK_IMG = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80';
+    const PAY_UNPAID = '未付', PAY_REPORTED = '已回報', PAY_PAID = '已付款';
+    const WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
 
     let weeklyGroups = [];
-    let activeGroupId = null;
+    let settings = {};
+    let activeGroupId = OVERVIEW;
+    let viewWeek = '';              // 目前檢視的週一（YYYY-MM-DD）
     let isAdminAuthenticated = false;
+    let adminPanelOpen = true;
     let adminToken = safeStorage('get', 'lunch_admin_token') || '';
     let summaryViewMode = 'dept';
     let showContactInSummary = false;
+    const myChecked = new Set();     // 我的訂單裡勾選要付款的 id
 
     let lineIdToken = '';
     let lineDecoded = null;
     let lineName = '';
 
-    let mutationSeq = 0;            // 每次本機修改 +1，用來避免舊的同步結果蓋掉新資料
+    let mutationSeq = 0;
     let pendingSaves = 0;
     let saveTimer = null;
     let lastSyncAt = 0;
@@ -524,19 +693,38 @@
     function formatDate(d) {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
-
     function formatDateTimeLocal(d) {
       return `${formatDate(d)}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
+    function parseDay(s) {
+      const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+    }
+    function addDays(s, n) {
+      const d = parseDay(s) || new Date();
+      d.setDate(d.getDate() + n);
+      return formatDate(d);
+    }
+    function mondayOf(s) {
+      const d = parseDay(s) || new Date();
+      d.setDate(d.getDate() - ((d.getDay() || 7) - 1));
+      return formatDate(d);
+    }
+    function md(s) {          // 11/2
+      const d = parseDay(s);
+      return d ? `${d.getMonth() + 1}/${d.getDate()}` : '--';
+    }
+    function mdw(s) {         // 11/2（一）
+      const d = parseDay(s);
+      return d ? `${d.getMonth() + 1}/${d.getDate()}（${WEEKDAY[d.getDay()]}）` : '未指定日期';
+    }
+    function money(n) { return '$' + (Number(n) || 0).toLocaleString(); }
 
     function escapeHtml(string) {
       if (string === null || string === undefined || string === '') return '';
       return String(string)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
     let toastTimer = null;
@@ -548,8 +736,23 @@
       toastTimer = setTimeout(() => el.classList.add('hidden'), ms);
     }
 
+    async function copyText(text, okMsg) {
+      try {
+        await navigator.clipboard.writeText(text);
+        alert(okMsg);
+      } catch (e) {
+        prompt('請手動複製以下文字：', text);
+      }
+    }
+
+    const isOverview = () => activeGroupId === OVERVIEW;
+
     function getActiveGroup() {
-      return weeklyGroups.find(g => g.id === activeGroupId) || weeklyGroups[0];
+      return weeklyGroups.find(g => g.id === activeGroupId) || null;
+    }
+
+    function groupsInWeek(monday) {
+      return weeklyGroups.filter(g => mondayOf(g.diningDate) === monday);
     }
 
     function isGroupClosed(g) {
@@ -559,9 +762,37 @@
       return isNaN(t) || t - Date.now() <= 0;
     }
 
-    function orderLink(groupId) {
+    function remainText(g) {
+      if (g.isForceClosed) return '🔒 已截止';
+      const diff = new Date(g.cutoffTime).getTime() - Date.now();
+      if (isNaN(diff) || diff <= 0) return '🔒 已截止';
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      if (d > 0) return `⏰ 剩 ${d} 天 ${h} 小時`;
+      return `⏰ 剩 ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function orderLink(params) {
       const base = LIFF_ID ? `https://liff.line.me/${LIFF_ID}` : (location.origin + location.pathname);
-      return groupId ? `${base}?g=${encodeURIComponent(groupId)}` : base;
+      const q = new URLSearchParams(params || {}).toString();
+      return q ? `${base}?${q}` : base;
+    }
+
+    function payBadge(o, clickable) {
+      const map = {
+        [PAY_PAID]: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        [PAY_REPORTED]: 'bg-amber-100 text-amber-800 border-amber-200',
+        [PAY_UNPAID]: 'bg-slate-100 text-slate-500 border-slate-200'
+      };
+      const icon = { [PAY_PAID]: '✅', [PAY_REPORTED]: '🔔', [PAY_UNPAID]: '⏳' }[o.payStatus] || '⏳';
+      const detail = [o.payMethod, o.payNote ? (o.payMethod === '轉帳' ? `後五碼 ${o.payNote}` : o.payNote) : ''].filter(Boolean).join('・');
+      const label = o.payStatus === PAY_REPORTED ? '待確認' : (o.payStatus || PAY_UNPAID);
+      const tag = clickable ? 'button' : 'span';
+      return `<${tag} ${clickable ? `type="button" data-pay-id="${escapeHtml(o.id)}"` : ''} title="${escapeHtml(detail)}"
+        class="${clickable ? 'pay-toggle-btn hover:ring-2 hover:ring-amber-300 ' : ''}inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-full text-[11px] font-bold border ${map[o.payStatus] || map[PAY_UNPAID]}">
+        ${icon} ${label}</${tag}>${detail ? `<div class="text-[10px] text-slate-400 mt-0.5 whitespace-nowrap">${escapeHtml(detail)}</div>` : ''}`;
     }
 
     /* ---------------- 與後端溝通 ---------------- */
@@ -573,7 +804,7 @@
       try {
         res = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 用 text/plain 避免跨網域預檢
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action, idToken: lineIdToken, adminToken, ...payload })
         });
       } catch (e) {
@@ -595,9 +826,11 @@
     function applyState(data, { fillInputs = false } = {}) {
       if (!data || !Array.isArray(data.groups)) return;
       weeklyGroups = data.groups;
-      if (!weeklyGroups.some(g => g.id === activeGroupId)) {
-        activeGroupId = weeklyGroups[0] ? weeklyGroups[0].id : null;
-        fillInputs = true;
+      settings = data.settings || {};
+      if (!isOverview()) {
+        const g = getActiveGroup();
+        if (!g) { activeGroupId = OVERVIEW; fillInputs = true; }
+        else viewWeek = mondayOf(g.diningDate);   // 改了日期就跟著換週
       }
       lastSyncAt = Date.now();
       renderAll(fillInputs);
@@ -608,7 +841,7 @@
       const seqAtStart = mutationSeq;
       try {
         const data = await api('getAll');
-        if (seqAtStart !== mutationSeq || pendingSaves > 0 || saveTimer) return; // 期間有本機修改，丟掉這次結果
+        if (seqAtStart !== mutationSeq || pendingSaves > 0 || saveTimer) return;
         applyState(data);
       } catch (e) {
         if (!silent) alert(e.message);
@@ -616,7 +849,6 @@
       }
     }
 
-    // 執行一個會修改資料的動作（送單、刪單、團主設定...）
     async function mutate(action, payload, { fillInputs = false, button = null } = {}) {
       mutationSeq++;
       pendingSaves++;
@@ -642,15 +874,11 @@
       };
     }
 
-    // 團主修改設定：畫面先更新，再延遲 0.8 秒存到雲端（打字時不會每個字都送一次）
     function saveGroupSoon() {
       mutationSeq++;
       setSyncStatus('編輯中...');
       clearTimeout(saveTimer);
-      saveTimer = setTimeout(async () => {
-        saveTimer = null;
-        await saveGroupNow();
-      }, 800);
+      saveTimer = setTimeout(async () => { saveTimer = null; await saveGroupNow(); }, 800);
     }
 
     async function saveGroupNow() {
@@ -671,9 +899,9 @@
     }
 
     setInterval(() => {
-      if (lastSyncAt) {
+      if (lastSyncAt && pendingSaves === 0 && !saveTimer) {
         const sec = Math.round((Date.now() - lastSyncAt) / 1000);
-        if (pendingSaves === 0 && !saveTimer) setSyncStatus(sec < 5 ? '✓ 已同步' : `✓ ${sec} 秒前同步`);
+        setSyncStatus(sec < 5 ? '✓ 已同步' : `✓ ${sec} 秒前同步`);
       }
     }, 1000);
 
@@ -688,7 +916,7 @@
       await liff.init({ liffId: LIFF_ID });
       if (!liff.isLoggedIn()) {
         liff.login({ redirectUri: location.href });
-        await new Promise(() => {}); // 等待跳轉
+        await new Promise(() => {});
       }
       lineIdToken = liff.getIDToken() || '';
       lineDecoded = liff.getDecodedIDToken();
@@ -710,12 +938,8 @@
     function relogin() {
       if (!LIFF_ID || reloggingIn) return;
       reloggingIn = true;
-      if (liff.isInClient()) {
-        location.reload();
-      } else {
-        liff.logout();
-        liff.login({ redirectUri: location.href });
-      }
+      if (liff.isInClient()) location.reload();
+      else { liff.logout(); liff.login({ redirectUri: location.href }); }
     }
 
     /* ---------------- DOM ---------------- */
@@ -732,12 +956,14 @@
     const adminLockIcon = $('adminLockIcon');
     const adminAuthBtnText = $('adminAuthBtnText');
     const adminPanel = $('adminPanel');
+    const adminWeekPanel = $('adminWeekPanel');
     const addWeekGroupBtn = $('addWeekGroupBtn');
     const adminCurrentTabLabel = $('adminCurrentTabLabel');
     const deleteGroupBtn = $('deleteGroupBtn');
-    const lockAdminBtn = $('lockAdminBtn');
     const shareLinkBtn = $('shareLinkBtn');
     const groupTabsContainer = $('groupTabsContainer');
+    const dayView = $('dayView');
+    const overviewView = $('overviewView');
 
     const tabNameInput = $('tabNameInput');
     const diningDateInput = $('diningDateInput');
@@ -794,49 +1020,55 @@
     const adminPasswordInput = $('adminPasswordInput');
     const passwordErrorMsg = $('passwordErrorMsg');
     const cancelPasswordBtn = $('cancelPasswordBtn');
+    const payModal = $('payModal');
 
-    /* ---------------- 畫面渲染 ---------------- */
+    /* ---------------- 畫面渲染：共用 ---------------- */
 
     function renderAll(fillInputs) {
-      const g = getActiveGroup();
-      if (!g) return;
-      topStoreName.textContent = g.storeName || '訂餐系統';
-      topDiningDateText.textContent = g.diningDate || '未指定';
-      topDeliveryTimeText.textContent = g.deliveryTime ? g.deliveryTime.replace('T', ' ') : '未指定';
-      const img = g.menuImgSrc || FALLBACK_IMG;
-      if (menuImage.getAttribute('src') !== img) menuImage.src = img;
-      adminCurrentTabLabel.textContent = g.tabLabel || g.storeName;
-      fillAdminInputs(g, fillInputs);
+      renderWeekNav();
       renderGroupTabs();
-      renderPresets();
-      renderOrders();
+      const showAdminDay = isAdminAuthenticated && adminPanelOpen && !isOverview();
+      const showAdminWeek = isAdminAuthenticated && adminPanelOpen && isOverview();
+      adminPanel.classList.toggle('hidden', !showAdminDay);
+      adminWeekPanel.classList.toggle('hidden', !showAdminWeek);
+      dayView.classList.toggle('hidden', isOverview());
+      overviewView.classList.toggle('hidden', !isOverview());
+      countdownBox.classList.toggle('hidden', isOverview());
+
+      if (isOverview()) {
+        renderOverview(fillInputs);
+      } else {
+        renderDay(fillInputs);
+      }
       updateCountdown();
     }
 
-    // 填入團主後台欄位（正在輸入的欄位不覆蓋）
-    function fillAdminInputs(g, force) {
-      const set = (el, v) => {
-        if (document.activeElement === el && !force) return;
-        if (el.value !== (v || '')) el.value = v || '';
-      };
-      set(tabNameInput, g.tabLabel);
-      set(diningDateInput, g.diningDate);
-      set(deliveryTimeInput, g.deliveryTime);
-      set(cutoffTimeInput, g.cutoffTime);
-      set(storeNameInput, g.storeName);
-      set(menuUrlInput, (g.menuImgSrc || '').startsWith('data:') ? '' : g.menuImgSrc);
-    }
-
-    function switchGroup() {
-      renderAll(true);
-      const url = new URL(location.href);
-      url.searchParams.set('g', activeGroupId);
-      history.replaceState(null, '', url);
+    function renderWeekNav() {
+      const sun = addDays(viewWeek, 6);
+      const thisWeek = mondayOf(formatDate(new Date()));
+      const tag = viewWeek === thisWeek ? '本週' : (viewWeek === addDays(thisWeek, 7) ? '下週' : (viewWeek === addDays(thisWeek, -7) ? '上週' : ''));
+      $('weekLabel').innerHTML = `<i class="fa-solid fa-calendar-week text-amber-500"></i> ${tag ? tag + ' ' : ''}${md(viewWeek)}–${md(sun)}`;
     }
 
     function renderGroupTabs() {
       groupTabsContainer.innerHTML = '';
-      weeklyGroups.forEach(g => {
+      // 總覽頁籤
+      const ov = document.createElement('button');
+      ov.type = 'button';
+      ov.className = 'px-3 py-1.5 text-xs font-bold whitespace-nowrap rounded-lg border shadow-xs transition ' +
+        (isOverview() ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700');
+      ov.innerHTML = '<i class="fa-solid fa-table-cells-large"></i> 總覽';
+      ov.addEventListener('click', () => goGroup(OVERVIEW));
+      groupTabsContainer.appendChild(ov);
+
+      const list = groupsInWeek(viewWeek);
+      if (list.length === 0) {
+        const span = document.createElement('span');
+        span.className = 'text-xs text-slate-400 px-2';
+        span.textContent = '這週還沒有開團';
+        groupTabsContainer.appendChild(span);
+      }
+      list.forEach(g => {
         const isActive = g.id === activeGroupId;
         const tabWrapper = document.createElement('div');
         tabWrapper.className = 'inline-flex items-center rounded-lg transition overflow-hidden shadow-xs border ' + (
@@ -846,11 +1078,7 @@
         tabBtn.type = 'button';
         tabBtn.className = 'px-3 py-1.5 text-xs font-bold whitespace-nowrap focus:outline-none';
         tabBtn.textContent = (g.tabLabel || g.storeName) + (isGroupClosed(g) ? ' 🔒' : '');
-        tabBtn.addEventListener('click', async () => {
-          if (saveTimer) await saveGroupNow();
-          activeGroupId = g.id;
-          switchGroup();
-        });
+        tabBtn.addEventListener('click', () => goGroup(g.id));
         tabWrapper.appendChild(tabBtn);
 
         if (isAdminAuthenticated) {
@@ -868,7 +1096,33 @@
       });
     }
 
+    async function goGroup(id) {
+      if (saveTimer) await saveGroupNow();
+      activeGroupId = id;
+      if (id !== OVERVIEW) {
+        const g = getActiveGroup();
+        if (g) viewWeek = mondayOf(g.diningDate);
+      }
+      renderAll(true);
+      updateUrl();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateUrl() {
+      const url = new URL(location.href);
+      if (isOverview()) { url.searchParams.delete('g'); url.searchParams.set('w', viewWeek); }
+      else { url.searchParams.delete('w'); url.searchParams.set('g', activeGroupId); }
+      history.replaceState(null, '', url);
+    }
+
     function updateCountdown() {
+      if (isOverview()) {
+        document.querySelectorAll('[data-countdown-gid]').forEach(el => {
+          const g = weeklyGroups.find(x => x.id === el.dataset.countdownGid);
+          if (g) el.textContent = remainText(g);
+        });
+        return;
+      }
       const g = getActiveGroup();
       if (!g) return;
       const closedStyle = () => {
@@ -877,11 +1131,7 @@
         orderStatusBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-700';
         formLockedOverlay.classList.remove('hidden');
       };
-      if (g.isForceClosed) {
-        countdownText.textContent = '已手動截止';
-        closedStyle();
-        return;
-      }
+      if (g.isForceClosed) { countdownText.textContent = '已手動截止'; closedStyle(); return; }
       const diff = new Date(g.cutoffTime).getTime() - Date.now();
       if (isNaN(diff) || diff <= 0) {
         countdownText.textContent = '00:00:00 (時間到)';
@@ -898,6 +1148,458 @@
       }
     }
     setInterval(updateCountdown, 1000);
+
+    /* ---------------- 畫面渲染：本週總覽 ---------------- */
+
+    function renderOverview(fillInputs) {
+      const list = groupsInWeek(viewWeek);
+      const openCount = list.filter(g => !isGroupClosed(g)).length;
+      topStoreName.textContent = '本週總覽';
+      orderStatusBadge.textContent = `${list.length} 團・${openCount} 團收單中`;
+      orderStatusBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full ' + (openCount ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600');
+      topDiningDateText.textContent = `${mdw(viewWeek)} ～ ${mdw(addDays(viewWeek, 6))}`;
+      topDeliveryTimeText.textContent = '點卡片進入當天點餐';
+
+      renderWeekCards(list);
+      renderMyOrders(list);
+      renderPayInfo();
+      if (isAdminAuthenticated) {
+        $('adminWeekLabel').textContent = `${md(viewWeek)}–${md(addDays(viewWeek, 6))}`;
+        fillSettingsInputs(fillInputs);
+        renderRecon(list);
+      }
+    }
+
+    function renderWeekCards(list) {
+      const box = $('weekCards');
+      $('weekCardsBadge').textContent = `共 ${list.length} 團`;
+      if (list.length === 0) {
+        box.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 text-sm">
+          這週還沒有開團${isAdminAuthenticated ? '。可以按上方「新增開團梯次」，或回到上一週按「複製本週菜單到下週」。' : '，請等團主開團 🙏'}</div>`;
+        return;
+      }
+      box.innerHTML = '';
+      list.forEach(g => {
+        const closed = isGroupClosed(g);
+        const mine = (g.orders || []).filter(o => o.mine);
+        const people = new Set((g.orders || []).map(o => `${o.department}_${o.name}`)).size;
+        const presets = (g.presets || []);
+        const card = document.createElement('div');
+        card.className = 'group border rounded-xl overflow-hidden bg-white hover:shadow-md hover:border-amber-300 transition cursor-pointer flex flex-col ' + (closed ? 'border-slate-200 opacity-75' : 'border-slate-200');
+        card.innerHTML = `
+          <div class="relative h-28 bg-slate-100">
+            <img src="${escapeHtml(g.menuImgSrc || FALLBACK_IMG)}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'">
+            <span class="absolute top-2 left-2 bg-white/95 text-slate-800 text-xs font-black px-2 py-0.5 rounded-md shadow-sm">${mdw(g.diningDate)}</span>
+          </div>
+          <div class="p-3 space-y-2 flex-1 flex flex-col">
+            <div>
+              <div class="font-bold text-slate-900 text-sm leading-tight">${escapeHtml(g.tabLabel || g.storeName)}</div>
+              <div class="text-xs text-slate-500">${escapeHtml(g.storeName)}</div>
+            </div>
+            <div class="flex flex-wrap gap-1">
+              ${presets.slice(0, 4).map(p => `<span class="text-[11px] bg-amber-50 border border-amber-200 text-amber-900 px-1.5 py-0.5 rounded">${escapeHtml(p.name)} <b>$${escapeHtml(p.price)}</b></span>`).join('')}
+              ${presets.length > 4 ? `<span class="text-[11px] text-slate-400 px-1">+${presets.length - 4} 項</span>` : ''}
+            </div>
+            <div class="text-xs font-bold ${closed ? 'text-rose-600' : 'text-amber-700'}" data-countdown-gid="${escapeHtml(g.id)}">${remainText(g)}</div>
+            <div class="text-[11px] text-slate-400">已有 ${people} 人點餐</div>
+            <div class="mt-auto pt-1">
+              ${mine.length
+                ? `<div class="text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg px-2 py-1.5">✅ 我已點：${mine.map(o => `${escapeHtml(o.item)}×${o.qty}`).join('、')}</div>`
+                : (closed ? '<div class="text-xs text-slate-400 text-center py-1.5">未點餐</div>'
+                          : '<div class="text-xs bg-amber-500 group-hover:bg-amber-600 text-white font-bold text-center rounded-lg py-1.5"><i class="fa-solid fa-plus"></i> 去點餐</div>')}
+            </div>
+          </div>`;
+        card.addEventListener('click', () => goGroup(g.id));
+        box.appendChild(card);
+      });
+    }
+
+    function renderMyOrders(list) {
+      const box = $('myOrdersContainer');
+      const summary = $('mySummary');
+      const other = $('myOtherWeeks');
+      const canPay = !!lineIdToken;
+
+      if (!canPay) {
+        box.innerHTML = '<div class="text-sm text-slate-500 bg-slate-50 rounded-xl p-4 text-center">請從 LINE 開啟訂餐連結，才能查看自己的訂單與回報付款。</div>';
+        summary.innerHTML = '';
+        other.classList.add('hidden');
+        return;
+      }
+
+      let total = 0, paid = 0, reported = 0, unpaid = 0;
+      const sections = [];
+      const validIds = new Set();
+      list.forEach(g => {
+        const mine = (g.orders || []).filter(o => o.mine);
+        if (!mine.length) return;
+        const closed = isGroupClosed(g);
+        let rows = '';
+        mine.forEach(o => {
+          const sub = o.price * o.qty;
+          total += sub;
+          if (o.payStatus === PAY_PAID) paid += sub;
+          else if (o.payStatus === PAY_REPORTED) reported += sub;
+          else { unpaid += sub; validIds.add(o.id); }
+          const checkable = o.payStatus === PAY_UNPAID;
+          rows += `
+            <div class="flex items-center gap-2.5 py-2 px-3 ${checkable ? '' : 'opacity-90'}">
+              <input type="checkbox" class="my-pay-check w-4 h-4 accent-amber-500 ${checkable ? '' : 'invisible'}" data-id="${escapeHtml(o.id)}" ${myChecked.has(o.id) ? 'checked' : ''}>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-semibold text-slate-800">${escapeHtml(o.item)} <span class="text-slate-400 font-normal">×${o.qty}</span></div>
+                <div class="text-[11px] text-slate-400 truncate">${escapeHtml(o.department)}・${escapeHtml(o.name)}${o.note ? '・' + escapeHtml(o.note) : ''}</div>
+              </div>
+              <div class="text-sm font-bold text-amber-600 font-mono">${money(sub)}</div>
+              <div class="text-center w-24">${payBadge(o, false)}</div>
+              ${(!closed && checkable) ? `<button type="button" class="my-del-btn text-slate-300 hover:text-rose-600 text-xs p-1" data-id="${escapeHtml(o.id)}" title="刪除"><i class="fa-regular fa-trash-can pointer-events-none"></i></button>` : '<span class="w-5"></span>'}
+            </div>`;
+        });
+        sections.push(`
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <button type="button" class="w-full flex items-center justify-between bg-slate-50 px-3 py-2 text-left hover:bg-amber-50 my-go-btn" data-gid="${escapeHtml(g.id)}">
+              <span class="text-xs font-bold text-slate-700">${mdw(g.diningDate)}　${escapeHtml(g.tabLabel || g.storeName)}</span>
+              <span class="text-[11px] ${closed ? 'text-slate-400' : 'text-amber-600'}">${closed ? '已截止' : '收單中・可修改'} <i class="fa-solid fa-chevron-right"></i></span>
+            </button>
+            <div class="divide-y divide-slate-100">${rows}</div>
+          </div>`);
+      });
+
+      // 移除已經不能勾的
+      [...myChecked].forEach(id => { if (!validIds.has(id)) myChecked.delete(id); });
+
+      box.innerHTML = sections.length ? sections.join('')
+        : '<div class="text-sm text-slate-400 text-center py-6">這週還沒有點餐，點上面的卡片開始點吧！</div>';
+      summary.innerHTML = sections.length ? `
+        <div class="bg-slate-50 rounded-xl py-2"><div class="text-[11px] text-slate-500">本週合計</div><div class="font-black text-slate-800">${money(total)}</div></div>
+        <div class="bg-emerald-50 rounded-xl py-2"><div class="text-[11px] text-emerald-700">已付／待確認</div><div class="font-black text-emerald-700">${money(paid)}<span class="text-amber-600 text-sm"> / ${money(reported)}</span></div></div>
+        <div class="bg-rose-50 rounded-xl py-2"><div class="text-[11px] text-rose-700">還沒付</div><div class="font-black text-rose-600">${money(unpaid)}</div></div>` : '';
+
+      box.querySelectorAll('.my-pay-check').forEach(cb => cb.addEventListener('change', () => {
+        cb.checked ? myChecked.add(cb.dataset.id) : myChecked.delete(cb.dataset.id);
+      }));
+      box.querySelectorAll('.my-go-btn').forEach(b => b.addEventListener('click', () => goGroup(b.dataset.gid)));
+      box.querySelectorAll('.my-del-btn').forEach(b => b.addEventListener('click', () => deleteOrder(b.dataset.id)));
+
+      // 其他週的未付款
+      const otherUnpaid = {};
+      weeklyGroups.forEach(g => {
+        const w = mondayOf(g.diningDate);
+        if (w === viewWeek) return;
+        (g.orders || []).forEach(o => {
+          if (o.mine && o.payStatus === PAY_UNPAID) otherUnpaid[w] = (otherUnpaid[w] || 0) + o.price * o.qty;
+        });
+      });
+      const weeks = Object.keys(otherUnpaid).sort();
+      if (weeks.length) {
+        other.innerHTML = '⚠️ 其他週還有未付款：' + weeks.map(w =>
+          `<button type="button" class="underline font-bold mx-1 other-week-btn" data-w="${w}">${md(w)} 那週 ${money(otherUnpaid[w])}</button>`).join('、');
+        other.classList.remove('hidden');
+        other.querySelectorAll('.other-week-btn').forEach(b => b.addEventListener('click', () => {
+          viewWeek = b.dataset.w; activeGroupId = OVERVIEW; renderAll(true); updateUrl();
+        }));
+      } else {
+        other.classList.add('hidden');
+      }
+    }
+
+    function bankText() {
+      const s = settings || {};
+      if (!s.bankAccount) return '';
+      return `${s.bankCode ? `(${s.bankCode}) ` : ''}${s.bankName || ''} ${s.bankAccount}${s.accountName ? `　戶名：${s.accountName}` : ''}`.trim();
+    }
+
+    function renderPayInfo() {
+      const s = settings || {};
+      const box = $('payInfoBox');
+      let html = '';
+      if (s.bankAccount) {
+        html += `
+          <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 space-y-1">
+            <div class="text-xs font-bold text-indigo-800"><i class="fa-solid fa-building-columns"></i> 銀行轉帳</div>
+            <div class="text-sm text-slate-700">${escapeHtml(s.bankCode ? `(${s.bankCode}) ` : '')}${escapeHtml(s.bankName)}</div>
+            <div class="flex items-center gap-2">
+              <span class="font-mono font-bold text-slate-900 text-base break-all">${escapeHtml(s.bankAccount)}</span>
+              <button type="button" id="copyAccountBtn" class="text-xs bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-md shrink-0"><i class="fa-regular fa-copy"></i> 複製</button>
+            </div>
+            ${s.accountName ? `<div class="text-xs text-slate-600">戶名：${escapeHtml(s.accountName)}</div>` : ''}
+          </div>`;
+      } else {
+        html += '<div class="text-xs text-slate-400 bg-slate-50 rounded-xl p-3">團主還沒設定收款帳號</div>';
+      }
+      html += `
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+          <div class="text-xs font-bold text-emerald-800"><i class="fa-solid fa-money-bill-wave"></i> 現金</div>
+          <div class="text-xs text-slate-600 mt-0.5">交給團主或部門代表</div>
+        </div>`;
+      if (s.payNote) html += `<div class="text-xs text-slate-600 bg-amber-50 border border-amber-200 rounded-xl p-3 whitespace-pre-line">${escapeHtml(s.payNote)}</div>`;
+      html += '<div class="text-[11px] text-slate-400">付完款後，在左邊勾選訂單 → 按「我已付款」回報。</div>';
+      box.innerHTML = html;
+      const btn = $('copyAccountBtn');
+      if (btn) btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(s.bankAccount).then(() => toast('已複製帳號')).catch(() => prompt('帳號：', s.bankAccount));
+      });
+    }
+
+    /* ---------- 付款回報 ---------- */
+
+    $('selectAllUnpaidBtn').addEventListener('click', () => {
+      const boxes = [...document.querySelectorAll('.my-pay-check:not(.invisible)')];
+      const allOn = boxes.length && boxes.every(b => b.checked);
+      boxes.forEach(b => { b.checked = !allOn; b.checked ? myChecked.add(b.dataset.id) : myChecked.delete(b.dataset.id); });
+    });
+
+    function myOrderById(id) {
+      for (const g of weeklyGroups) for (const o of (g.orders || [])) if (o.id === id) return { g, o };
+      return null;
+    }
+
+    function setPayMethod(m) {
+      document.querySelectorAll('.pay-method-opt').forEach(el => {
+        const on = el.dataset.method === m;
+        el.querySelector('input').checked = on;
+        el.className = 'pay-method-opt cursor-pointer border-2 rounded-xl p-3 text-center text-sm font-bold transition ' +
+          (on ? 'border-amber-500 bg-amber-50 text-amber-800' : 'border-slate-200 text-slate-500 hover:border-slate-300');
+      });
+      $('payTransferFields').classList.toggle('hidden', m !== '轉帳');
+      $('payCashFields').classList.toggle('hidden', m !== '現金');
+    }
+    document.querySelectorAll('.pay-method-opt').forEach(el => el.addEventListener('click', () => setPayMethod(el.dataset.method)));
+
+    $('openPayModalBtn').addEventListener('click', () => {
+      const ids = [...myChecked];
+      if (!ids.length) { alert('請先勾選要付款的訂單（可按「全選未付」）'); return; }
+      let total = 0, html = '';
+      ids.forEach(id => {
+        const r = myOrderById(id);
+        if (!r) return;
+        const sub = r.o.price * r.o.qty;
+        total += sub;
+        html += `<div class="flex justify-between"><span>${md(r.g.diningDate)} ${escapeHtml(r.o.item)}×${r.o.qty}</span><span class="font-mono">${money(sub)}</span></div>`;
+      });
+      html += `<div class="flex justify-between border-t border-slate-200 pt-1 mt-1 font-black"><span>合計</span><span class="text-amber-600 font-mono">${money(total)}</span></div>`;
+      $('payModalItems').innerHTML = html;
+      $('payModalBank').innerHTML = bankText() ? `請轉帳 <b>${money(total)}</b> 到：<br>${escapeHtml(bankText())}` : '團主尚未設定帳號，請直接詢問團主';
+      $('payLast5').value = safeStorage('get', 'lunch_last5') || '';
+      $('payCashNote').value = '';
+      $('payModalError').classList.add('hidden');
+      setPayMethod('轉帳');
+      payModal.classList.remove('hidden');
+    });
+
+    $('payCancelBtn').addEventListener('click', () => payModal.classList.add('hidden'));
+
+    $('paySubmitBtn').addEventListener('click', async () => {
+      const method = document.querySelector('input[name="payMethod"]:checked').value;
+      const note = method === '轉帳' ? $('payLast5').value.trim() : $('payCashNote').value.trim();
+      const err = $('payModalError');
+      if (method === '轉帳' && !/^\d{5}$/.test(note)) {
+        err.textContent = '請輸入轉出帳號的後五碼（5 位數字）';
+        err.classList.remove('hidden');
+        return;
+      }
+      try {
+        await mutate('reportPayment', { orderIds: [...myChecked], method, note }, { button: $('paySubmitBtn') });
+        if (method === '轉帳') safeStorage('set', 'lunch_last5', note);
+        myChecked.clear();
+        payModal.classList.add('hidden');
+        renderAll(false);
+        toast('✅ 已回報付款，等團主確認');
+      } catch (e) {
+        err.textContent = e.message;
+        err.classList.remove('hidden');
+      }
+    });
+
+    /* ---------- 團主：對帳 ---------- */
+
+    function personKey(o) { return `${o.department}｜${o.name}`; }
+
+    function renderRecon(list) {
+      const people = {};
+      let tPaid = 0, tRep = 0, tUnpaid = 0;
+      list.forEach(g => (g.orders || []).forEach(o => {
+        const k = personKey(o);
+        const p = people[k] || (people[k] = { dept: o.department, name: o.name, total: 0, paid: 0, rep: 0, unpaid: 0, repIds: [], unpaidIds: [], repNotes: [] });
+        const sub = o.price * o.qty;
+        p.total += sub;
+        if (o.payStatus === PAY_PAID) { p.paid += sub; tPaid += sub; }
+        else if (o.payStatus === PAY_REPORTED) {
+          p.rep += sub; tRep += sub; p.repIds.push(o.id);
+          const n = o.payMethod === '轉帳' ? `轉帳 ${o.payNote}` : `現金${o.payNote ? ' ' + o.payNote : ''}`;
+          if (!p.repNotes.includes(n)) p.repNotes.push(n);
+        } else { p.unpaid += sub; tUnpaid += sub; p.unpaidIds.push(o.id); }
+      }));
+
+      $('reconSummary').innerHTML = `
+        <div class="bg-emerald-50 rounded-xl py-2"><div class="text-[11px] text-emerald-700">已收</div><div class="font-black text-emerald-700">${money(tPaid)}</div></div>
+        <div class="bg-amber-50 rounded-xl py-2"><div class="text-[11px] text-amber-700">待確認</div><div class="font-black text-amber-600">${money(tRep)}</div></div>
+        <div class="bg-rose-50 rounded-xl py-2"><div class="text-[11px] text-rose-700">未付</div><div class="font-black text-rose-600">${money(tUnpaid)}</div></div>`;
+
+      const onlyOpen = $('reconOnlyOpen').checked;
+      const rows = Object.values(people)
+        .filter(p => !onlyOpen || p.rep + p.unpaid > 0)
+        .sort((a, b) => a.dept.localeCompare(b.dept) || a.name.localeCompare(b.name));
+      const body = $('reconTableBody');
+      if (!rows.length) {
+        body.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">${Object.keys(people).length ? '🎉 這週全部結清了' : '這週還沒有訂單'}</td></tr>`;
+        return;
+      }
+      body.innerHTML = rows.map((p, i) => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-2 px-3"><span class="text-[11px] bg-amber-50 border border-amber-200 text-amber-800 px-1.5 py-0.5 rounded">${escapeHtml(p.dept)}</span> <b class="text-slate-900">${escapeHtml(p.name)}</b>
+            ${p.repNotes.length ? `<div class="text-[10px] text-amber-700 mt-0.5">🔔 ${escapeHtml(p.repNotes.join('、'))}</div>` : ''}</td>
+          <td class="py-2 px-3 text-right font-mono">${money(p.total)}</td>
+          <td class="py-2 px-3 text-right font-mono text-emerald-700">${p.paid ? money(p.paid) : '-'}</td>
+          <td class="py-2 px-3 text-right font-mono text-amber-600">${p.rep ? money(p.rep) : '-'}</td>
+          <td class="py-2 px-3 text-right font-mono text-rose-600 font-bold">${p.unpaid ? money(p.unpaid) : '-'}</td>
+          <td class="py-2 px-3 text-center whitespace-nowrap">
+            ${p.rep ? `<button type="button" class="recon-confirm text-[11px] bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2 py-1 rounded-md" data-i="${i}">確認收款</button>` : ''}
+            ${p.unpaid ? `<button type="button" class="recon-cash text-[11px] bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-md" data-i="${i}">收到現金</button>` : ''}
+            ${!p.rep && !p.unpaid ? '<span class="text-emerald-600 text-xs font-bold">✅ 結清</span>' : ''}
+          </td>
+        </tr>`).join('');
+
+      body.querySelectorAll('.recon-confirm').forEach(b => b.addEventListener('click', async () => {
+        const p = rows[+b.dataset.i];
+        if (!confirm(`確認已收到【${p.dept} ${p.name}】${money(p.rep)}？\n回報：${p.repNotes.join('、')}`)) return;
+        try { await mutate('setPayment', { orderIds: p.repIds, status: PAY_PAID }, { button: b }); toast('已確認收款'); }
+        catch (e) { alert(e.message); }
+      }));
+      body.querySelectorAll('.recon-cash').forEach(b => b.addEventListener('click', async () => {
+        const p = rows[+b.dataset.i];
+        if (!confirm(`確認收到【${p.dept} ${p.name}】現金 ${money(p.unpaid)}？`)) return;
+        try { await mutate('setPayment', { orderIds: p.unpaidIds, status: PAY_PAID, method: '現金' }, { button: b }); toast('已記錄現金收款'); }
+        catch (e) { alert(e.message); }
+      }));
+    }
+    $('reconOnlyOpen').addEventListener('change', () => renderRecon(groupsInWeek(viewWeek)));
+
+    // 催款名單：到這週為止所有未付款（不含已回報待確認）
+    $('copyUnpaidBtn').addEventListener('click', () => {
+      const end = addDays(viewWeek, 7);
+      const byDept = {};
+      let grand = 0;
+      weeklyGroups.forEach(g => {
+        if (!g.diningDate || g.diningDate >= end) return;
+        (g.orders || []).forEach(o => {
+          if (o.payStatus !== PAY_UNPAID) return;
+          const d = byDept[o.department] || (byDept[o.department] = {});
+          const p = d[o.name] || (d[o.name] = { amount: 0, days: new Set() });
+          p.amount += o.price * o.qty;
+          p.days.add(`${md(g.diningDate)}（${WEEKDAY[parseDay(g.diningDate).getDay()]}）`);
+          grand += o.price * o.qty;
+        });
+      });
+      if (!grand) { alert('🎉 目前沒有未付款的訂單！'); return; }
+      let text = `💰【訂餐未付款名單】截至 ${md(addDays(viewWeek, 6))}\n`;
+      Object.keys(byDept).sort().forEach(dept => {
+        text += `\n🔹 ${dept}\n`;
+        Object.entries(byDept[dept]).forEach(([name, p]) => {
+          text += `   • ${name}：${money(p.amount)}（${[...p.days].join('、')}）\n`;
+        });
+      });
+      text += `\n合計未收：${money(grand)}\n`;
+      if (bankText()) text += `\n🏦 轉帳：${bankText()}\n`;
+      text += `💡 付款後請到訂餐系統「總覽 → 我已付款」回報，謝謝！\n👉 ${orderLink({ w: viewWeek })}`;
+      copyText(text, '✅ 已複製未付款名單，可以直接貼到 LINE 群組！');
+    });
+
+    /* ---------- 團主：收款設定 ---------- */
+
+    function fillSettingsInputs(force) {
+      const map = { setBankCode: 'bankCode', setBankName: 'bankName', setBankAccount: 'bankAccount', setAccountName: 'accountName', setPayNote: 'payNote' };
+      Object.entries(map).forEach(([id, key]) => {
+        const el = $(id);
+        if (document.activeElement === el && !force) return;
+        if (el.dataset.dirty === '1' && !force) return;
+        el.value = settings[key] || '';
+        el.dataset.dirty = '';
+      });
+    }
+    ['setBankCode', 'setBankName', 'setBankAccount', 'setAccountName', 'setPayNote'].forEach(id =>
+      $(id).addEventListener('input', () => { $(id).dataset.dirty = '1'; }));
+
+    $('saveSettingsBtn').addEventListener('click', async () => {
+      const payload = {
+        bankCode: $('setBankCode').value.trim(), bankName: $('setBankName').value.trim(),
+        bankAccount: $('setBankAccount').value.trim(), accountName: $('setAccountName').value.trim(),
+        payNote: $('setPayNote').value.trim()
+      };
+      try {
+        await mutate('saveSettings', { settings: payload }, { button: $('saveSettingsBtn') });
+        fillSettingsInputs(true);
+        toast('✅ 收款設定已儲存');
+      } catch (e) { alert(e.message); }
+    });
+
+    /* ---------- 團主：複製到下週、分享本週 ---------- */
+
+    $('copyWeekBtn').addEventListener('click', async () => {
+      const list = groupsInWeek(viewWeek);
+      if (!list.length) { alert('這週沒有開團梯次可以複製'); return; }
+      const next = addDays(viewWeek, 7);
+      const exist = groupsInWeek(next).length;
+      let msg = `要把這週的 ${list.length} 個團（店家、菜單、快捷品項、時間）複製到下週 ${md(next)}–${md(addDays(next, 6))} 嗎？\n\n・日期會自動往後一週\n・不會複製訂單`;
+      if (exist) msg += `\n\n⚠️ 下週已經有 ${exist} 個團了，複製後會變成 ${exist + list.length} 個。`;
+      if (!confirm(msg)) return;
+      try {
+        await mutate('copyWeek', { fromMonday: viewWeek, toMonday: next }, { button: $('copyWeekBtn') });
+        viewWeek = next;
+        activeGroupId = OVERVIEW;
+        renderAll(true);
+        updateUrl();
+        toast('✅ 已建立下週的團，可以點各天微調');
+      } catch (e) { alert(e.message); }
+    });
+
+    $('shareWeekBtn').addEventListener('click', async () => {
+      const list = groupsInWeek(viewWeek);
+      let text = `🍱【${md(viewWeek)}–${md(addDays(viewWeek, 6))} 訂餐開放囉！】\n`;
+      list.forEach(g => {
+        text += `• ${mdw(g.diningDate)} ${g.storeName}（截止 ${(g.cutoffTime || '').slice(5).replace('T', ' ')}）\n`;
+      });
+      text += `\n可以一次看整週菜單、選日期點餐 👇\n${orderLink({ w: viewWeek })}`;
+      await shareText(text);
+    });
+
+    async function shareText(text) {
+      try {
+        if (LIFF_ID && liff.isApiAvailable && liff.isApiAvailable('shareTargetPicker')) {
+          await liff.shareTargetPicker([{ type: 'text', text }]);
+          return;
+        }
+      } catch (e) { /* 改用複製 */ }
+      await copyText(text, '✅ 已複製訂餐通知與連結，可以直接貼到 LINE 群組！');
+    }
+
+    /* ---------------- 畫面渲染：單日 ---------------- */
+
+    function renderDay(fillInputs) {
+      const g = getActiveGroup();
+      if (!g) return;
+      topStoreName.textContent = g.storeName || '訂餐系統';
+      topDiningDateText.textContent = g.diningDate ? mdw(g.diningDate) : '未指定';
+      topDeliveryTimeText.textContent = g.deliveryTime ? g.deliveryTime.replace('T', ' ') : '未指定';
+      const img = g.menuImgSrc || FALLBACK_IMG;
+      if (menuImage.getAttribute('src') !== img) menuImage.src = img;
+      adminCurrentTabLabel.textContent = g.tabLabel || g.storeName;
+      fillAdminInputs(g, fillInputs);
+      renderPresets();
+      renderOrders();
+    }
+
+    function fillAdminInputs(g, force) {
+      const set = (el, v) => {
+        if (document.activeElement === el && !force) return;
+        if (el.value !== (v || '')) el.value = v || '';
+      };
+      set(tabNameInput, g.tabLabel);
+      set(diningDateInput, g.diningDate);
+      set(deliveryTimeInput, g.deliveryTime);
+      set(cutoffTimeInput, g.cutoffTime);
+      set(storeNameInput, g.storeName);
+      set(menuUrlInput, (g.menuImgSrc || '').startsWith('data:') ? '' : g.menuImgSrc);
+    }
 
     function renderPresets() {
       const g = getActiveGroup();
@@ -958,6 +1660,17 @@
       return { overallItemMap, deptMap, totalQty, totalAmount, personKeySet };
     }
 
+    async function deleteOrder(id) {
+      if (!confirm('確定要刪除這筆餐點紀錄嗎？')) return;
+      try {
+        await mutate('deleteOrder', { orderId: id });
+        toast('已刪除');
+      } catch (err) {
+        alert(err.message);
+        refresh();
+      }
+    }
+
     function renderOrders() {
       const g = getActiveGroup();
       const orders = g.orders || [];
@@ -966,12 +1679,12 @@
 
       ordersTableBody.innerHTML = '';
       if (orders.length === 0) {
-        ordersTableBody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400 italic">
+        ordersTableBody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400 italic">
           目前【${escapeHtml(g.tabLabel || g.storeName)}】尚無任何點餐紀錄，請從左側表單新增！</td></tr>`;
       } else {
         orders.forEach((o, index) => {
           const subtotal = o.price * o.qty;
-          const canDelete = isAdminAuthenticated || (o.mine && !closed);
+          const canDelete = isAdminAuthenticated || (o.mine && !closed && o.payStatus === PAY_UNPAID);
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-50 transition text-slate-700' + (o.mine ? ' bg-emerald-50/50' : '');
           tr.innerHTML = `
@@ -985,6 +1698,7 @@
             <td class="py-2.5 px-3 text-center font-bold text-slate-800">${o.qty}</td>
             <td class="py-2.5 px-3 text-right font-mono font-bold text-amber-600">$${subtotal.toLocaleString()}</td>
             <td class="py-2.5 px-3 text-xs text-slate-500">${escapeHtml(o.note || '-')}</td>
+            <td class="py-2.5 px-3 text-center">${payBadge(o, isAdminAuthenticated)}</td>
             <td class="py-2.5 px-3 text-center">${canDelete
               ? `<button class="delete-btn text-slate-400 hover:text-rose-600 transition text-xs p-1" data-id="${escapeHtml(o.id)}" title="刪除此筆"><i class="fa-regular fa-trash-can pointer-events-none"></i></button>`
               : '<span class="text-slate-200 text-xs">—</span>'}</td>`;
@@ -992,19 +1706,26 @@
         });
       }
 
-      ordersTableBody.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', async e => {
-          const id = e.currentTarget.getAttribute('data-id');
-          if (!confirm('確定要刪除這筆餐點紀錄嗎？')) return;
-          try {
-            await mutate('deleteOrder', { orderId: id });
-            toast('已刪除');
-          } catch (err) {
-            alert(err.message);
-            refresh();
+      ordersTableBody.querySelectorAll('.delete-btn').forEach(btn =>
+        btn.addEventListener('click', e => deleteOrder(e.currentTarget.getAttribute('data-id'))));
+
+      // 團主點付款狀態：未付/待確認 → 已付款；已付款 → 改回未付
+      ordersTableBody.querySelectorAll('.pay-toggle-btn').forEach(btn => btn.addEventListener('click', async e => {
+        const id = e.currentTarget.dataset.payId;
+        const o = orders.find(x => x.id === id);
+        if (!o) return;
+        const sub = money(o.price * o.qty);
+        try {
+          if (o.payStatus === PAY_PAID) {
+            if (!confirm(`把【${o.name} ${o.item}】${sub} 改回「未付」？`)) return;
+            await mutate('setPayment', { orderIds: [id], status: PAY_UNPAID });
+          } else {
+            const how = o.payStatus === PAY_REPORTED ? `（對方回報：${o.payMethod} ${o.payNote || ''}）` : '（記為現金）';
+            if (!confirm(`確認已收到【${o.name} ${o.item}】${sub}？${how}`)) return;
+            await mutate('setPayment', { orderIds: [id], status: PAY_PAID, method: '現金' });
           }
-        });
-      });
+        } catch (err) { alert(err.message); }
+      }));
 
       statPeopleCount.textContent = personKeySet.size;
       statTotalQty.textContent = totalQty;
@@ -1110,10 +1831,7 @@
       div.querySelector('.item-price-field').addEventListener('input', calculateFormTotal);
       qtyInputEl.addEventListener('input', calculateFormTotal);
       div.querySelector('.remove-row-btn').addEventListener('click', () => {
-        if (itemRowsContainer.querySelectorAll('.item-row').length <= 1) {
-          alert('請至少保留一個餐點品項！');
-          return;
-        }
+        if (itemRowsContainer.querySelectorAll('.item-row').length <= 1) { alert('請至少保留一個餐點品項！'); return; }
         div.remove();
         updateItemRowIndices();
         calculateFormTotal();
@@ -1148,17 +1866,11 @@
     orderForm.addEventListener('submit', async e => {
       e.preventDefault();
       const g = getActiveGroup();
-      if (isGroupClosed(g)) {
-        alert('⚠️ 此梯次訂單已經截止收單，無法再新增餐點！');
-        return;
-      }
+      if (!g || isGroupClosed(g)) { alert('⚠️ 此梯次訂單已經截止收單，無法再新增餐點！'); return; }
       const department = deptInput.value.trim();
       const name = userNameInput.value.trim();
       const phone = phoneInput.value.trim();
-      if (!department || !name || !phone) {
-        alert('請完整填寫「部門/單位」、「訂餐人姓名」與「連絡電話/分機」！');
-        return;
-      }
+      if (!department || !name || !phone) { alert('請完整填寫「部門/單位」、「訂餐人姓名」與「連絡電話/分機」！'); return; }
       const rows = itemRowsContainer.querySelectorAll('.item-row');
       const items = [];
       for (let idx = 0; idx < rows.length; idx++) {
@@ -1167,21 +1879,21 @@
         const price = parseFloat(row.querySelector('.item-price-field').value);
         const qty = parseInt(row.querySelector('.item-qty-field').value) || 1;
         const note = row.querySelector('.item-note-field').value.trim();
-        if (!item || isNaN(price)) {
-          alert(`品項 #${idx + 1} 的名稱或金額尚未填寫完整！`);
-          return;
-        }
+        if (!item || isNaN(price)) { alert(`品項 #${idx + 1} 的名稱或金額尚未填寫完整！`); return; }
         items.push({ department, name, phone, item, price, qty, note });
       }
       if (items.length === 0) { alert('請至少新增一項餐點！'); return; }
 
       try {
         await mutate('addOrders', { groupId: g.id, orders: items }, { button: submitOrderBtn });
-        // 記住部門與電話，下次免重填
         safeStorage('set', 'lunch_my_info', JSON.stringify({ department, name, phone }));
         itemRowsContainer.innerHTML = '';
         createItemRow();
-        alert(`✅ 已成功送出【${g.tabLabel || g.storeName}】${department}（${name}）共 ${items.length} 道餐點！`);
+        const others = groupsInWeek(viewWeek).filter(x => x.id !== g.id && !isGroupClosed(x) && !(x.orders || []).some(o => o.mine));
+        let msg = `✅ 已成功送出【${g.tabLabel || g.storeName}】${department}（${name}）共 ${items.length} 道餐點！`;
+        msg += `\n\n💰 付款：到「總覽 → 我的本週訂單」勾選後按「我已付款」，可以一天一付或整週一起付。`;
+        if (others.length) msg += `\n\n📅 這週還有 ${others.length} 天可以點：${others.map(x => mdw(x.diningDate)).join('、')}`;
+        alert(msg);
       } catch (err) {
         alert(err.message);
         refresh();
@@ -1201,7 +1913,7 @@
     function setAdminState(on) {
       isAdminAuthenticated = on;
       if (!on) { adminToken = ''; safeStorage('del', 'lunch_admin_token'); }
-      adminPanel.classList.toggle('hidden', !on);
+      if (on) adminPanelOpen = true;
       addWeekGroupBtn.classList.toggle('hidden', !on);
       clearAllBtn.classList.toggle('hidden', !on);
       if (on) {
@@ -1213,12 +1925,13 @@
         adminLockIcon.className = 'fa-solid fa-lock text-amber-600';
         adminAuthBtn.className = 'text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg font-medium transition flex items-center gap-1.5 border border-slate-300';
       }
-      if (weeklyGroups.length) { renderGroupTabs(); renderOrders(); }
+      if (viewWeek) renderAll(on);
     }
 
     adminAuthBtn.addEventListener('click', () => {
       if (isAdminAuthenticated) {
-        adminPanel.classList.toggle('hidden');
+        adminPanelOpen = !adminPanelOpen;
+        renderAll(false);
       } else {
         adminPasswordInput.value = '';
         passwordErrorMsg.classList.add('hidden');
@@ -1239,7 +1952,7 @@
         safeStorage('set', 'lunch_admin_token', adminToken);
         passwordModal.classList.add('hidden');
         setAdminState(true);
-        fillAdminInputs(getActiveGroup(), true);
+        refresh();   // 重新取得資料（團主可看到所有付款備註）
       } catch (err) {
         passwordErrorMsg.textContent = err.message;
         passwordErrorMsg.classList.remove('hidden');
@@ -1249,22 +1962,25 @@
       }
     });
 
-    lockAdminBtn.addEventListener('click', () => {
+    function logoutAdmin() {
       setAdminState(false);
       alert('已安全登出並鎖定團主後台！');
-    });
+    }
+    $('lockAdminBtn').addEventListener('click', logoutAdmin);
+    $('lockAdminBtn2').addEventListener('click', logoutAdmin);
 
     addWeekGroupBtn.addEventListener('click', async () => {
-      const newLabel = prompt('請輸入新開團梯次名稱（例如：週六 加開團、下週一 便當團）：', '新開團梯次');
+      const newLabel = prompt(`請輸入新開團梯次名稱（會建立在 ${md(viewWeek)} 那一週，之後可以改日期）：`, '新開團梯次');
       if (!newLabel) return;
       const today = formatDate(new Date());
+      const day = mondayOf(today) === viewWeek ? today : viewWeek;
       const newGroup = {
         id: 'group_' + Date.now(),
         tabLabel: newLabel,
         storeName: '新開團店家',
-        diningDate: today,
-        deliveryTime: `${today}T11:45`,
-        cutoffTime: `${today}T10:00`,
+        diningDate: day,
+        deliveryTime: `${day}T11:45`,
+        cutoffTime: `${day}T10:00`,
         isForceClosed: false,
         menuImgSrc: FALLBACK_IMG,
         presets: [{ name: '招牌餐點', price: 100 }]
@@ -1272,23 +1988,22 @@
       try {
         activeGroupId = newGroup.id;
         await mutate('saveGroup', { group: newGroup }, { fillInputs: true, button: addWeekGroupBtn });
-        switchGroup();
+        updateUrl();
       } catch (err) {
+        activeGroupId = OVERVIEW;
         alert(err.message);
       }
     });
 
     async function deleteGroupById(targetId) {
-      if (weeklyGroups.length <= 1) {
-        alert('請至少保留一個開團梯次，無法刪除全部！');
-        return;
-      }
       const target = weeklyGroups.find(g => g.id === targetId);
       if (!target) return;
-      if (!confirm(`確定要將【${target.tabLabel || target.storeName}】梯次整筆刪除嗎？\n（包含裡面的所有訂單明細與菜單設定）`)) return;
+      const n = (target.orders || []).length;
+      if (!confirm(`確定要將【${target.tabLabel || target.storeName}】(${mdw(target.diningDate)}) 整筆刪除嗎？\n（包含裡面的 ${n} 筆訂單與付款紀錄，無法復原）`)) return;
       try {
+        if (activeGroupId === targetId) activeGroupId = OVERVIEW;
         await mutate('deleteGroup', { groupId: targetId }, { fillInputs: true });
-        switchGroup();
+        updateUrl();
       } catch (err) {
         alert(err.message);
       }
@@ -1296,7 +2011,6 @@
 
     deleteGroupBtn.addEventListener('click', () => deleteGroupById(activeGroupId));
 
-    // 一般欄位：邊打邊存
     tabNameInput.addEventListener('input', () => {
       const g = getActiveGroup();
       g.tabLabel = tabNameInput.value.trim() || g.storeName;
@@ -1311,7 +2025,9 @@
       saveGroupSoon();
     });
     diningDateInput.addEventListener('change', () => {
-      getActiveGroup().diningDate = diningDateInput.value;
+      const g = getActiveGroup();
+      g.diningDate = diningDateInput.value;
+      viewWeek = mondayOf(g.diningDate);
       renderAll(false);
       saveGroupNow();
     });
@@ -1371,7 +2087,6 @@
       saveGroupNow();
     });
 
-    // 上傳菜單照片：先在手機上縮小，再存到團主的 Google 雲端硬碟
     menuFileInput.addEventListener('change', async e => {
       const file = e.target.files[0];
       if (!file) return;
@@ -1415,35 +2130,20 @@
       });
     }
 
-    // 分享此團訂餐連結（LINE 裡可直接選群組傳送）
     shareLinkBtn.addEventListener('click', async () => {
       const g = getActiveGroup();
-      const link = orderLink(g.id);
-      const text = `🍱【${g.tabLabel || g.storeName}】開放訂餐囉！\n🏪 ${g.storeName}\n📅 用餐日：${g.diningDate || '未指定'}\n⏰ 截止：${(g.cutoffTime || '').replace('T', ' ')}\n👉 點這裡訂餐：${link}`;
-      try {
-        if (LIFF_ID && liff.isApiAvailable && liff.isApiAvailable('shareTargetPicker')) {
-          await liff.shareTargetPicker([{ type: 'text', text }]);
-          return;
-        }
-      } catch (e) { /* 改用複製 */ }
-      try {
-        await navigator.clipboard.writeText(text);
-        alert('✅ 已複製訂餐通知與連結，可以直接貼到 LINE 群組！');
-      } catch (e) {
-        prompt('請手動複製以下文字：', text);
-      }
+      const text = `🍱【${g.tabLabel || g.storeName}】開放訂餐囉！\n🏪 ${g.storeName}\n📅 用餐日：${mdw(g.diningDate)}\n⏰ 截止：${(g.cutoffTime || '').replace('T', ' ')}\n👉 點這裡訂餐：${orderLink({ g: g.id })}`;
+      await shareText(text);
     });
 
     clearAllBtn.addEventListener('click', async () => {
       const g = getActiveGroup();
-      if (!g.orders || g.orders.length === 0) return;
-      if (!confirm(`確定要清空【${g.tabLabel || g.storeName}】目前的點餐記錄嗎？\n（試算表裡這團的訂單也會一起刪除）`)) return;
+      if (!g || !g.orders || g.orders.length === 0) return;
+      if (!confirm(`確定要清空【${g.tabLabel || g.storeName}】目前的點餐記錄嗎？\n（試算表裡這團的訂單和付款紀錄也會一起刪除）`)) return;
       try {
         await mutate('clearOrders', { groupId: g.id });
         toast('已清空');
-      } catch (err) {
-        alert(err.message);
-      }
+      } catch (err) { alert(err.message); }
     });
 
     copyLineBtn.addEventListener('click', () => {
@@ -1451,7 +2151,6 @@
       const orders = g.orders || [];
       if (orders.length === 0) { alert('此梯次目前尚無點餐資料！'); return; }
       const { overallItemMap, deptMap, totalQty, totalAmount } = buildSummaryMaps(orders);
-
       let text = `🍱【${g.storeName} (${g.tabLabel}) 團購訂單統計】\n`;
       text += `📅 用餐日期：${g.diningDate || '未指定'}\n`;
       text += `🚚 預計送達：${g.deliveryTime ? g.deliveryTime.replace('T', ' ') : '未指定'}\n`;
@@ -1466,10 +2165,7 @@
       text += `------------------------\n📋【全單品項總彙總（快速點餐）】\n`;
       for (const [item, qty] of Object.entries(overallItemMap)) text += `• ${item} × ${qty}\n`;
       text += `------------------------\n💰 總計：共 ${totalQty} 份 ｜ 總金額：$${totalAmount.toLocaleString()} 元\n`;
-
-      navigator.clipboard.writeText(text)
-        .then(() => alert('✅ 叫餐清單已成功複製！可直接貼給店家！'))
-        .catch(() => prompt('請手動複製以下叫餐文字：', text));
+      copyText(text, '✅ 叫餐清單已成功複製！可直接貼給店家！');
     });
 
     exportCsvBtn.addEventListener('click', () => {
@@ -1477,10 +2173,10 @@
       const orders = g.orders || [];
       if (orders.length === 0) { alert('此梯次尚無資料可供匯出'); return; }
       const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-      let csv = '﻿梯次,編號,部門/單位,訂餐人姓名,電話/分機,餐點名稱,單價,份數,小計,備註,LINE名稱,送出時間,用餐日期,預計送達\n';
+      let csv = '﻿梯次,編號,部門/單位,訂餐人姓名,電話/分機,餐點名稱,單價,份數,小計,備註,付款狀態,付款方式,付款備註,LINE名稱,送出時間,用餐日期,預計送達\n';
       orders.forEach((o, i) => {
         csv += [g.tabLabel, i + 1, o.department, o.name, o.phone, o.item, o.price, o.qty, o.price * o.qty,
-          o.note, o.lineName, o.createdAt, g.diningDate, g.deliveryTime].map(q).join(',') + '\n';
+          o.note, o.payStatus, o.payMethod, o.payNote, o.lineName, o.createdAt, g.diningDate, g.deliveryTime].map(q).join(',') + '\n';
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
@@ -1492,6 +2188,9 @@
     });
 
     /* ---------------- 其他介面 ---------------- */
+
+    $('prevWeekBtn').addEventListener('click', () => { viewWeek = addDays(viewWeek, -7); activeGroupId = OVERVIEW; renderAll(true); updateUrl(); });
+    $('nextWeekBtn').addEventListener('click', () => { viewWeek = addDays(viewWeek, 7); activeGroupId = OVERVIEW; renderAll(true); updateUrl(); });
 
     viewModeDeptBtn.addEventListener('click', () => {
       summaryViewMode = 'dept';
@@ -1521,7 +2220,7 @@
     closeModalBtn.addEventListener('click', () => imageModal.classList.add('hidden'));
     imageModal.addEventListener('click', e => { if (e.target === imageModal) imageModal.classList.add('hidden'); });
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { imageModal.classList.add('hidden'); passwordModal.classList.add('hidden'); }
+      if (e.key === 'Escape') { imageModal.classList.add('hidden'); passwordModal.classList.add('hidden'); payModal.classList.add('hidden'); }
     });
 
     /* ---------------- 啟動 ---------------- */
@@ -1536,26 +2235,40 @@
     }
     $('loadingRetryBtn').addEventListener('click', () => location.reload());
 
+    // 預設顯示哪一週：最早一個還在收單的團那週 → 本週（有團的話）→ 最近有團的一週
+    function pickDefaultWeek() {
+      const thisWeek = mondayOf(formatDate(new Date()));
+      const open = weeklyGroups.filter(g => !isGroupClosed(g) && g.diningDate)
+        .sort((a, b) => a.diningDate.localeCompare(b.diningDate));
+      if (open.length) return mondayOf(open[0].diningDate);
+      if (groupsInWeek(thisWeek).length) return thisWeek;
+      const weeks = [...new Set(weeklyGroups.map(g => mondayOf(g.diningDate)))].sort();
+      return weeks.length ? weeks[weeks.length - 1] : thisWeek;
+    }
+
     (async function start() {
-      if (!API_URL) {
-        showFatal('尚未完成設定', '請在 index.html 最下方的設定區填入 API_URL（Apps Script 網頁應用程式網址）。');
-        return;
-      }
+      if (!API_URL) { showFatal('尚未完成設定', '請在 index.html 的設定區填入 API_URL。'); return; }
       try {
         $('loadingText').textContent = LIFF_ID ? '正在使用 LINE 登入...' : '正在連線訂餐系統...';
         await initLine();
         $('loadingText').textContent = '正在載入訂單...';
         const data = await api('getAll');
-        const wanted = new URLSearchParams(location.search).get('g');
-        if (wanted && data.groups.some(g => g.id === wanted)) activeGroupId = wanted;
-        applyState(data, { fillInputs: true });
-        if (adminToken) {
-          // 之前登入過團主，確認是否仍有效
-          setAdminState(true);
-          refresh();
+        weeklyGroups = data.groups;
+        const params = new URLSearchParams(location.search);
+        const wantG = params.get('g');
+        const wantW = params.get('w');
+        if (wantG && weeklyGroups.some(g => g.id === wantG)) {
+          activeGroupId = wantG;
+        } else {
+          activeGroupId = OVERVIEW;
+          viewWeek = (wantW && /^\d{4}-\d{2}-\d{2}$/.test(wantW)) ? mondayOf(wantW) : pickDefaultWeek();
         }
+        if (adminToken) { isAdminAuthenticated = true; setAdminState(true); }
+        applyState(data, { fillInputs: true });
+        if (adminToken) refresh();   // 確認團主登入仍有效
         prefillMyInfo();
         createItemRow();
+        updateUrl();
         $('loadingOverlay').classList.add('hidden');
       } catch (err) {
         showFatal('無法連線訂餐系統', err.message);
